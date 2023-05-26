@@ -1,0 +1,7 @@
+{
+    "name": "Telfer ECG Analysis",
+    "build": {
+      "dockerfile": "../Dockerfile",
+      "context": ".."
+    }
+  }
