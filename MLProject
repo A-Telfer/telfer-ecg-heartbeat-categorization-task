@@ -5,8 +5,8 @@ entry_points:
   test:
     parameters:
       seed: {type: int, default: 42}
-      epochs: {type: int, default: 10}
-      max_runs: {type: int, default: 10}
+      epochs: {type: int, default: 2}
+      max_runs: {type: int, default: 3}
     command: "python src/models/hparam_opt.py
       --seed {seed}
       --epochs {epochs}

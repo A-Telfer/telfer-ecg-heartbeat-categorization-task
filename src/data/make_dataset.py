@@ -40,9 +40,10 @@ def add_noise(signal, scale=0.05):
 
 @click.command()
 @click.option("--class_sample_size", default=100000, type=click.INT)
-@click.option("--test-holdout-ratio", default=0.5, type=click.FLOAT)
+@click.option("--test-size", default=0.95, type=click.FLOAT)
+@click.option("--holdout-size", default=0.5, type=click.FLOAT)
 @click.option("--seed", default=42, type=click.INT)
-def main(class_sample_size, test_holdout_ratio, seed):
+def main(class_sample_size, test_size, holdout_size, seed):
     """Runs data processing scripts to turn raw data from (../raw) into
     cleaned data ready to be analyzed (saved in ../processed).
     """
@@ -83,11 +84,17 @@ def main(class_sample_size, test_holdout_ratio, seed):
         signals["target"] = c
         generated_dfs.append(signals)
 
-    # Merge and save the separate class_dataframes
-    logger.info("saving processed data to mitbih_train.csv")
-    output_df = pd.concat(generated_dfs)
-    output_df.to_csv(
+    # Split train and validation datasets here so all models use the train data
+    df = pd.concat(generated_dfs)
+    train_indices, val_indices = train_test_split(
+        df.index, test_size=test_size
+    )
+    logger.info("saving train and validation datasets")
+    df.loc[train_indices].to_csv(
         project_dir / "data/processed/mitbih_train.csv", index=False
+    )
+    df.loc[val_indices].to_csv(
+        project_dir / "data/processed/mitbih_val.csv", index=False
     )
 
     # Rename last column as 'target' in the test set
@@ -98,7 +105,7 @@ def main(class_sample_size, test_holdout_ratio, seed):
 
     # Split test dataset into test and holdout
     test_indices, holdout_indices = train_test_split(
-        df.index, test_size=test_holdout_ratio, stratify=df.target
+        df.index, test_size=holdout_size, stratify=df.target
     )
 
     logger.info("saving test and holdout datasets")

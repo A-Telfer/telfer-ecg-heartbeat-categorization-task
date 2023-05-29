@@ -153,7 +153,7 @@ def run(
         loss_fn = torch.nn.CrossEntropyLoss()
 
         for epoch in range(epochs):
-            # Training
+            # Training loop
             train_losses = []
             train_preds = None
             train_targets = None
@@ -185,7 +185,7 @@ def run(
                     f"Loss: {np.array(train_losses).mean():.04f}"
                 )
 
-            # Validation
+            # Validation loop
             val_losses = []
             val_preds = None
             val_targets = None
@@ -222,7 +222,7 @@ def run(
                 f"Validation Loss: {val_loss:.3f}"
             )
 
-        # Testing
+        # Testing loop
         test_losses = []
         test_preds = None
         test_targets = None
@@ -250,8 +250,8 @@ def run(
             )
 
         test_loss = np.array(test_losses).mean()
-        logger.info(f"Training finished, test loss: {test_loss}")
-        # mlflow.log_metric(key="test_loss", value=test_loss)
+        logger.info(f"Training finished, test loss: {test_loss:.3f}")
+        mlflow.log_metric(key="test_loss", value=test_loss)
 
 
 if __name__ == "__main__":

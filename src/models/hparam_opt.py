@@ -111,7 +111,7 @@ def hparam_optimize(seed, max_runs, epochs):
         # Create a null run to determine default values when errors occur
         logger.info("Starting null run")
         train_null_loss, valid_null_loss = new_eval(
-            0, experiment_id, _inf, _inf, True
+            1, experiment_id, _inf, _inf, True
         )(params=[0, 0])
 
         # Define search space for optimization
@@ -123,7 +123,9 @@ def hparam_optimize(seed, max_runs, epochs):
         # Search parameters and optimize loss
         logger.info("Beginning hparam optimization")
         best = fmin(
-            fn=new_eval(epochs, experiment_id, train_null_loss, valid_null_loss),
+            fn=new_eval(
+                epochs, experiment_id, train_null_loss, valid_null_loss
+            ),
             space=space,
             algo=tpe.suggest,
             max_evals=max_runs,
