@@ -13,5 +13,7 @@ seaborn
 torch
 python-dotenv>=0.5.1
 torchmetrics
+mlflow
+hyperopt
 pre-commit
 tqdm

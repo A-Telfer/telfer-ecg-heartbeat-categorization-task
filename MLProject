@@ -1,0 +1,26 @@
+name: telfer_heartbeat_ecg_categorization
+conda_env: environment.yml
+
+entry_points:
+  test:
+    parameters:
+      seed: {type: int, default: 42}
+      epochs: {type: int, default: 10}
+      max_runs: {type: int, default: 10}
+    command: "python src/models/hparam_opt.py
+      --seed {seed}
+      --epochs {epochs}
+      --max_runs {max_runs}"
+
+  train:
+    parameters:
+      seed: {type: int, default: 42}
+      epochs: {type: int, default: 10}
+      momentum: {type: float, default: 0.9}
+      learning_rate: {type: float, default: 0.01}
+      training_data: {type: string, default: "data/processed"}
+    command: "python src/models/train_model.py {training_data}
+      --seed {seed}
+      --epochs {epochs}
+      --momentum {momentum}
+      --learning_rate {learning_rate}"
