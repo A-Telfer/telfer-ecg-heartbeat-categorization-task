@@ -17,3 +17,5 @@ mlflow
 hyperopt
 pre-commit
 tqdm
+lightning
+PyWavelets

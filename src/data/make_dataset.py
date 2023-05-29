@@ -9,6 +9,7 @@ import random
 from tqdm import tqdm
 from pathlib import Path
 from sklearn.model_selection import train_test_split
+# from src.features.build_features import extract_features_from_dataframe
 
 
 def graft_signals(signal1, signal2):
@@ -56,15 +57,39 @@ def main(class_sample_size, test_size, holdout_size, seed):
     # Load the dataframe
     project_dir = Path(__file__).resolve().parents[2]
     logger.info("loading raw data from mitbih_train.csv")
-    df = pd.read_csv(project_dir / "data/raw/mitbih_train.csv", header=None)
 
-    # Rename the target column
-    df = df.rename(columns={df.columns[-1]: "target"})
-    df.target = df.target.astype(int)
+    # Load the data frame and rename the target column
+    def _rename_target_column(df):
+        df = df.rename(columns={df.columns[-1]: "target"})
+        df.target = df.target.astype(int)
+        return df
+
+    logger.info("load mitbih_train.csv")
+    df = pd.read_csv(project_dir / "data/raw/mitbih_train.csv", header=None)
+    df = _rename_target_column(df)
+
+    logger.info("split train and validation datasets")
+    train_indices, val_indices = train_test_split(
+        df.index, test_size=test_size, stratify=df.target
+    )
+    train_df = df.loc[train_indices]
+    val_df = df.loc[val_indices]
+
+    logger.info("load mitbih_test.csv")
+    df = pd.read_csv(project_dir / "data/raw/mitbih_test.csv", header=None)
+    df = _rename_target_column(df)
+
+    logger.info("split test and holdout datasets")
+    test_indices, holdout_indices = train_test_split(
+        df.index, test_size=holdout_size, stratify=df.target
+    )
+    test_df = df.loc[test_indices]
+    holdout_df = df.loc[holdout_indices]
 
     # For each class, generate new signals using the graft augmentation
+    logger.info("generate new train samples to balance classes")
     generated_dfs = []
-    for c, class_df in df.groupby("target"):
+    for c, class_df in train_df.groupby("target"):
         logger.info(f"generating {class_sample_size} samples for class: {c}")
         indices = np.arange(len(class_df))
         values = class_df.values[:, :-1]
@@ -85,36 +110,28 @@ def main(class_sample_size, test_size, holdout_size, seed):
         generated_dfs.append(signals)
 
     # Split train and validation datasets here so all models use the train data
-    df = pd.concat(generated_dfs)
-    train_indices, val_indices = train_test_split(
-        df.index, test_size=test_size
-    )
-    logger.info("saving train and validation datasets")
-    df.loc[train_indices].to_csv(
+    train_df = pd.concat(generated_dfs)
+
+    # Extract features
+    # logger.info("extracting training features")
+    # train_df = extract_features_from_dataframe(train_df)
+    # logger.info("extracting validation features")
+    # val_df = extract_features_from_dataframe(val_df)
+    # logger.info("extracting test features")
+    # test_df = extract_features_from_dataframe(test_df)
+    # logger.info("extracting holdout features")
+    # holdout_df = extract_features_from_dataframe(holdout_df)
+
+    logger.info("save datasets")
+    train_df.to_csv(
         project_dir / "data/processed/mitbih_train.csv", index=False
     )
-    df.loc[val_indices].to_csv(
-        project_dir / "data/processed/mitbih_val.csv", index=False
-    )
-
-    # Rename last column as 'target' in the test set
-    logger.info("reading raw data from mitbih_test.csv")
-    df = pd.read_csv(project_dir / "data/raw/mitbih_test.csv", header=None)
-    df = df.rename(columns={df.columns[-1]: "target"})
-    df.target = df.target.astype(int)
-
-    # Split test dataset into test and holdout
-    test_indices, holdout_indices = train_test_split(
-        df.index, test_size=holdout_size, stratify=df.target
-    )
-
-    logger.info("saving test and holdout datasets")
-    df.loc[test_indices].to_csv(
-        project_dir / "data/processed/mitbih_test.csv", index=False
-    )
-    df.loc[holdout_indices].to_csv(
+    val_df.to_csv(project_dir / "data/processed/mitbih_val.csv", index=False)
+    test_df.to_csv(project_dir / "data/processed/mitbih_test.csv", index=False)
+    holdout_df.to_csv(
         project_dir / "data/processed/mitbih_holdout.csv", index=False
     )
+
     logger.info("completed data processing")
 
 

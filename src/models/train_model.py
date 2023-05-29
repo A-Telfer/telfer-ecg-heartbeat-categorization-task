@@ -15,12 +15,12 @@ from tqdm import tqdm
 
 
 class SimpleLinearModel(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, input_size=187):
         """Creates a simple model FC model"""
         super().__init__()
 
         self._model = torch.nn.Sequential(
-            torch.nn.Linear(187, 256),
+            torch.nn.Linear(input_size, 256),
             torch.nn.ReLU(),
             torch.nn.Linear(256, 256),
             torch.nn.ReLU(),
@@ -36,11 +36,12 @@ class EcgDataset(Dataset):
 
     def __init__(self, df):
         self.df = df
+        self.targets = df.target.astype(int)
+        self.inputs = df[df.columns.drop("target")]
 
     def __getitem__(self, idx):
-        sample = self.df.iloc[idx]
-        x = sample.values[:-1].astype(np.float32)
-        y = sample.values[-1].astype(int)
+        x = self.inputs.iloc[idx].values.astype(np.float32)
+        y = self.targets.iloc[idx].astype(int)
         return x, y
 
     def __len__(self):
@@ -117,22 +118,18 @@ def run(
         train_datafile = Path(training_data) / "mitbih_train.csv"
         train_df = pd.read_csv(train_datafile)
 
+        val_datafile = Path(training_data) / "mitbih_val.csv"
+        val_df = pd.read_csv(val_datafile)
+
         test_datafile = Path(training_data) / "mitbih_test.csv"
         test_df = pd.read_csv(test_datafile)
 
-        # Create the train/validation split
-        indices = np.arange(len(train_df))
-        np.random.shuffle(indices)
-        train_split_index = int(train_val_ratio * len(indices))
-        train_indices = indices[:train_split_index]
-        validation_indices = indices[train_split_index:]
-
         # Create the training data
-        train_dataset = EcgDataset(train_df.iloc[train_indices])
+        train_dataset = EcgDataset(train_df)
         train_dataloader = DataLoader(
             train_dataset, batch_size=batch_size, shuffle=True, generator=g
         )
-        validation_dataset = EcgDataset(train_df.iloc[validation_indices])
+        validation_dataset = EcgDataset(val_df)
         validation_dataloader = DataLoader(
             validation_dataset,
             batch_size=batch_size,
@@ -146,7 +143,7 @@ def run(
         )
 
         # Initialize model and optimizer
-        model = SimpleLinearModel()
+        model = SimpleLinearModel(input_size=train_dataset[0][0].shape[0])
         optimizer = torch.optim.SGD(
             model.parameters(), lr=learning_rate, momentum=momentum
         )
@@ -250,8 +247,9 @@ def run(
             )
 
         test_loss = np.array(test_losses).mean()
-        logger.info(f"Training finished, test loss: {test_loss:.3f}")
+        logger.info(f"Test loss: {test_loss:.3f}")
         mlflow.log_metric(key="test_loss", value=test_loss)
+        logger.info("run complete")
 
 
 if __name__ == "__main__":
