@@ -9,6 +9,7 @@ perform better.
 """
 import pandas as pd
 import pywt
+import numpy as np
 
 
 def extract_basic_features_from_series(s: pd.Series):
@@ -18,9 +19,8 @@ def extract_basic_features_from_series(s: pd.Series):
     s = s[s.index.drop("target")]
     s = s.astype(float)
 
-    features = pywt.dwt(s, "morl")
-    print(features)
-    return features
+    cwtmatr, freqs = pywt.cwt(s, np.arange(1, 30), "mexh")
+    return cwtmatr.reshape(-1)
 
 
 def extract_features_from_dataframe(df: pd.DataFrame):
