@@ -19,7 +19,7 @@ def extract_basic_features_from_series(s: pd.Series):
     s = s[s.index.drop("target")]
     s = s.astype(float)
 
-    cwtmatr, freqs = pywt.cwt(s, np.arange(1, 30), "mexh")
+    cwtmatr, freqs = pywt.cwt(s, np.arange(1, 5), "mexh")
     return cwtmatr.reshape(-1)
 
 

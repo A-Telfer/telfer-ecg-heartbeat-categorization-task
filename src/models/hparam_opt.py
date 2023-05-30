@@ -53,7 +53,7 @@ def hparam_optimize(seed, max_runs, epochs):
         epochs,
         experiment_id,
         null_train_loss,
-        null_val_loss,
+        null_val_accuracy,
         return_all=False,
     ):
         """Function wrapper for training a mdoel"""
@@ -88,20 +88,20 @@ def hparam_optimize(seed, max_runs, epochs):
                 training_run = tracking_client.get_run(p.run_id)
                 metrics = training_run.data.metrics
                 train_loss = min(null_train_loss, metrics["train_loss"])
-                val_loss = min(null_val_loss, metrics["val_loss"])
+                val_accuracy = min(null_val_accuracy, metrics["val_accuracy"])
             else:
                 tracking_client.set_terminated(p.run_id, "FAILED")
                 train_loss = null_train_loss
-                val_loss = null_val_loss
+                val_accuracy = null_val_accuracy
 
             mlflow.log_metrics(
-                {"train_loss": train_loss, "val_loss": val_loss}
+                {"train_loss": train_loss, "val_accuracy": val_accuracy}
             )
 
             if return_all:
-                return train_loss, val_loss
+                return train_loss, val_accuracy
             else:
-                return val_loss
+                return val_accuracy
 
         return eval
 
@@ -144,15 +144,15 @@ def hparam_optimize(seed, max_runs, epochs):
         best_val_valid = _inf
         best_run = None
         for r in runs:
-            if r.data.metrics["val_loss"] < best_val_valid:
+            if r.data.metrics["val_accuracy"] < best_val_valid:
                 best_run = r
                 best_val_train = r.data.metrics["train_loss"]
-                best_val_valid = r.data.metrics["val_loss"]
+                best_val_valid = r.data.metrics["val_accuracy"]
         mlflow.set_tag("best_run", best_run.info.run_id)
         mlflow.log_metrics(
             {
                 "best_train_loss": best_val_train,
-                "best_val_loss": best_val_valid,
+                "best_val_accuracy": best_val_valid,
             }
         )
 

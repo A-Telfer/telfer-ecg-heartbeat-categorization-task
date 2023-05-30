@@ -19,7 +19,8 @@ entry_points:
       momentum: {type: float, default: 0.9}
       learning_rate: {type: float, default: 0.01}
       training_data: {type: string, default: "data/processed"}
-    command: "python src/models/train_model.py {training_data}
+    command: "python src/models/train_model.py 
+      --training_data {training_data}
       --seed {seed}
       --epochs {epochs}
       --momentum {momentum}
