@@ -8,7 +8,7 @@ import numpy as np
 import click
 import logging
 from mlflow.tracking import MlflowClient
-from hyperopt import fmin, hp, tpe
+from hyperopt import fmin, hp, rand
 
 _inf = np.finfo(np.float64).max
 
@@ -53,13 +53,12 @@ def hparam_optimize(seed, max_runs, epochs):
         epochs,
         experiment_id,
         null_train_loss,
-        null_val_accuracy,
         return_all=False,
     ):
         """Function wrapper for training a mdoel"""
 
         def eval(params):
-            lr, momentum = params
+            lr, momentum, weight_decay = params
             with mlflow.start_run(nested=True) as child_run:
                 p = mlflow.projects.run(
                     run_id=child_run.info.run_id,
@@ -69,6 +68,7 @@ def hparam_optimize(seed, max_runs, epochs):
                         "epochs": str(epochs),
                         "learning_rate": str(lr),
                         "momentum": str(momentum),
+                        "weight_decay": str(weight_decay),
                         "seed": str(seed),
                     },
                     experiment_id=experiment_id,
@@ -79,6 +79,7 @@ def hparam_optimize(seed, max_runs, epochs):
                     {
                         "lr": lr,
                         "momentum": momentum,
+                        "weight_decay": weight_decay,
                         "epochs": epochs,
                         "seed": seed,
                     }
@@ -88,11 +89,11 @@ def hparam_optimize(seed, max_runs, epochs):
                 training_run = tracking_client.get_run(p.run_id)
                 metrics = training_run.data.metrics
                 train_loss = min(null_train_loss, metrics["train_loss"])
-                val_accuracy = min(null_val_accuracy, metrics["val_accuracy"])
+                val_accuracy = metrics["val_accuracy"]
             else:
                 tracking_client.set_terminated(p.run_id, "FAILED")
                 train_loss = null_train_loss
-                val_accuracy = null_val_accuracy
+                val_accuracy = 0
 
             mlflow.log_metrics(
                 {"train_loss": train_loss, "val_accuracy": val_accuracy}
@@ -110,24 +111,23 @@ def hparam_optimize(seed, max_runs, epochs):
 
         # Create a null run to determine default values when errors occur
         logger.info("Starting null run")
-        train_null_loss, valid_null_loss = new_eval(
-            1, experiment_id, _inf, _inf, True
-        )(params=[0, 0])
+        train_null_loss, _ = new_eval(1, experiment_id, _inf, True)(
+            params=[0, 0, 0]
+        )
 
         # Define search space for optimization
         space = [
-            hp.uniform("lr", 1e-5, 1e-1),
+            hp.loguniform("lr", np.log(1e-4), np.log(1e-1)),
             hp.uniform("momentum", 0, 0.99),
+            hp.loguniform("weight_decay", np.log(1e-5), np.log(1e-2)),
         ]
 
         # Search parameters and optimize loss
         logger.info("Beginning hparam optimization")
         best = fmin(
-            fn=new_eval(
-                epochs, experiment_id, train_null_loss, valid_null_loss
-            ),
+            fn=new_eval(epochs, experiment_id, train_null_loss),
             space=space,
-            algo=tpe.suggest,
+            algo=rand.suggest,
             max_evals=max_runs,
         )
         mlflow.set_tag("best params", str(best))
@@ -140,11 +140,11 @@ def hparam_optimize(seed, max_runs, epochs):
                 run_id=run.info.run_id
             ),
         )
-        best_val_train = _inf
-        best_val_valid = _inf
+        best_val_train = 0
+        best_val_valid = 0
         best_run = None
         for r in runs:
-            if r.data.metrics["val_accuracy"] < best_val_valid:
+            if r.data.metrics["val_accuracy"] > best_val_valid:
                 best_run = r
                 best_val_train = r.data.metrics["train_loss"]
                 best_val_valid = r.data.metrics["val_accuracy"]

@@ -5,8 +5,8 @@ entry_points:
   test:
     parameters:
       seed: {type: int, default: 42}
-      epochs: {type: int, default: 2}
-      max_runs: {type: int, default: 3}
+      epochs: {type: int, default: 50}
+      max_runs: {type: int, default: 20}
     command: "python src/models/hparam_opt.py
       --seed {seed}
       --epochs {epochs}
@@ -15,13 +15,16 @@ entry_points:
   train:
     parameters:
       seed: {type: int, default: 42}
-      epochs: {type: int, default: 10}
+      epochs: {type: int, default: 50}
       momentum: {type: float, default: 0.9}
       learning_rate: {type: float, default: 0.01}
+      weight_decay: {type: float, default: 0.0001}
       training_data: {type: string, default: "data/processed"}
     command: "python src/models/train_model.py 
       --training_data {training_data}
       --seed {seed}
       --epochs {epochs}
       --momentum {momentum}
+      --weight_decay {weight_decay}
       --learning_rate {learning_rate}"
+
