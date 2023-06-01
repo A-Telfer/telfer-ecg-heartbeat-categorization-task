@@ -32,11 +32,15 @@ data: requirements
 build-docker:
 	docker build -t "telfer-ecg-heartbeat-categorization-task:latest" .
 
+## Build Docker
+run-docker:
+	docker run -it --gpus all --shm-size=16g "telfer-ecg-heartbeat-categorization-task:latest"
+
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
-	find data/processed -type f -name "*.csv" -delete
+	find . -type f -name "*.pt" -delete
 
 ## Format using black
 format:
@@ -45,6 +49,13 @@ format:
 ## Lint using flake8
 lint:
 	flake8 src
+
+## Run hparam optimization and 
+run: requirements
+	mlflow run . -e main
+
+gh-pages: 
+	ghp-import -p docs/_build/html/
 
 ## Set up python interpreter environment
 create_environment:
