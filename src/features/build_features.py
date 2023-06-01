@@ -13,7 +13,7 @@ import numpy as np
 
 
 def extract_basic_features_from_series(s: pd.Series):
-    """Extracts basic statistical features"""
+    """Extracts basic statistical features from a row"""
 
     # Exclude the target column
     s = s[s.index.drop("target")]
@@ -24,7 +24,7 @@ def extract_basic_features_from_series(s: pd.Series):
 
 
 def extract_features_from_dataframe(df: pd.DataFrame):
-    """Extract statistical features for the model"""
+    """Extract statistical features from a dataframe"""
 
     return pd.concat(
         [

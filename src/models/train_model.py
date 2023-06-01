@@ -12,13 +12,16 @@ import mlflow.pytorch
 import torchmetrics
 import os
 from pathlib import Path
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 
 import torch.nn.functional as F
 from lightning.pytorch.callbacks import Callback
+from src.data.dataset import EcgDataset
 
 
 class MetricsCallback(Callback):
+    """Callback created to log mlflow metrics and to manage early stopping"""
+
     def __init__(self, mlflow_run, num_classes=5, early_stopping_patience=3):
         super().__init__()
         self.logger = logging.getLogger(__name__)
@@ -158,7 +161,7 @@ class MetricsCallback(Callback):
             preds, targets, "test"
         )
         accuracy = self.log_macro_accuracy(preds, targets, "test")
-        f1 = self.log_macro_f1(preds, targets, 'test')
+        f1 = self.log_macro_f1(preds, targets, "test")
         auroc = self.log_macro_auroc(preds, targets, "test")
 
         self.logger.info(
@@ -176,47 +179,38 @@ class MetricsCallback(Callback):
         pl_module.epoch_test_targets = []
 
 
-class EcgDataset(Dataset):
-    """Ecg Dataset with no runtime augmentation"""
-
-    def __init__(self, df):
-        self.df = df
-        self.targets = df.target.astype(int)
-        self.inputs = df[df.columns.drop("target")]
-
-    def __getitem__(self, idx):
-        x = self.inputs.iloc[idx].values.astype(np.float32)
-        y = self.targets.iloc[idx].astype(int)
-        return x, y
-
-    def __len__(self):
-        return len(self.df)
-
-
 class LinearModel(pl.LightningModule):
     def __init__(
         self,
-        input_size=187,
         learning_rate=1e-3,
         momentum=0.9,
         weight_decay=1e-3,
+        input_size=187,
+        output_size=5,
+        num_hidden_layers=1,
+        hidden_layer_size=2048,
     ):
         super().__init__()
         self.learning_rate = learning_rate
         self.momentum = momentum
         self.weight_decay = weight_decay
 
+        hidden_layers = []
+        for _ in range(num_hidden_layers):
+            hidden_layers.append(
+                torch.nn.Linear(hidden_layer_size, hidden_layer_size)
+            )
+            hidden_layers.append(torch.nn.LeakyReLU())
+            torch.nn.Dropout(),
+
         self._model = torch.nn.Sequential(
-            torch.nn.Linear(input_size, 2048),
-            torch.nn.ReLU(),
-            torch.nn.Linear(2048, 2048),
-            torch.nn.ReLU(),
-            torch.nn.Linear(2048, 2048),
-            torch.nn.ReLU(),
-            torch.nn.Linear(2048, 5),
+            torch.nn.Linear(input_size, hidden_layer_size),
+            torch.nn.LeakyReLU(),
+            *hidden_layers,
+            torch.nn.LeakyReLU(),
+            torch.nn.Linear(hidden_layer_size, output_size),
         )
 
-        # Use
         self.epoch_train_losses = []
         self.epoch_train_preds = []
         self.epoch_train_targets = []
@@ -227,6 +221,10 @@ class LinearModel(pl.LightningModule):
 
     def forward(self, x):
         return self._model(x)
+
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        x, y = batch
+        return self.forward(x)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -290,6 +288,12 @@ class LinearModel(pl.LightningModule):
     help="L2 weight normalization",
 )
 @click.option(
+    "--hidden_layers",
+    type=click.INT,
+    default=1,
+    help="Number of hidden layers in the model",
+)
+@click.option(
     "--seed",
     type=click.INT,
     default=97531,
@@ -302,6 +306,7 @@ def run(
     learning_rate,
     momentum,
     weight_decay,
+    hidden_layers,
     seed,
 ):
     """Train a small Linear model
@@ -369,13 +374,14 @@ def run(
             learning_rate=learning_rate,
             weight_decay=weight_decay,
             momentum=momentum,
+            num_hidden_layers=hidden_layers,
         )
 
         warnings.filterwarnings("ignore")
         trainer = pl.Trainer(
             max_epochs=epochs,
             enable_progress_bar=False,
-            callbacks=[MetricsCallback(active_run)],
+            callbacks=[MetricsCallback(active_run, early_stopping_patience=5)],
             enable_checkpointing=False,
             logger=False,
         )
@@ -384,7 +390,17 @@ def run(
             train_dataloaders=train_dataloader,
             val_dataloaders=[validation_dataloader],
         )
+
         trainer.test(model=model, dataloaders=test_dataloader)
+        preds = trainer.predict(
+            model, test_dataloader, return_predictions=True
+        )
+        preds = torch.concat(preds).numpy()
+
+        signature = mlflow.models.signature.infer_signature(
+            test_dataset.df, preds
+        )
+        mlflow.pytorch.log_model(model, "linear_model", signature=signature)
         logger.info("run complete")
 
 

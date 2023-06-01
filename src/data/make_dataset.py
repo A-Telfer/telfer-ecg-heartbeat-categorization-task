@@ -101,6 +101,7 @@ def main(class_sample_size, test_size, holdout_size, seed):
 
             # Apply augmentations
             signal = graft_signals(signal1, signal2)
+            signal = temporal_shift_signal(signal)
             signals.append(signal)
 
         # Add the class column

@@ -2,12 +2,14 @@ name: telfer_heartbeat_ecg_categorization
 conda_env: environment.yml
 
 entry_points:
-  test:
+  main:
     parameters:
       seed: {type: int, default: 42}
-      epochs: {type: int, default: 50}
+      epochs: {type: int, default: 100}
       max_runs: {type: int, default: 20}
+      training_data: {type: string, default: "data/processed"}
     command: "python src/models/hparam_opt.py
+      --training_data {training_data}
       --seed {seed}
       --epochs {epochs}
       --max_runs {max_runs}"
@@ -19,6 +21,7 @@ entry_points:
       momentum: {type: float, default: 0.9}
       learning_rate: {type: float, default: 0.01}
       weight_decay: {type: float, default: 0.0001}
+      hidden_layers: {type: int, default: 1}
       training_data: {type: string, default: "data/processed"}
     command: "python src/models/train_model.py 
       --training_data {training_data}
@@ -26,5 +29,6 @@ entry_points:
       --epochs {epochs}
       --momentum {momentum}
       --weight_decay {weight_decay}
-      --learning_rate {learning_rate}"
+      --learning_rate {learning_rate}
+      --hidden_layers {hidden_layers}"
 
