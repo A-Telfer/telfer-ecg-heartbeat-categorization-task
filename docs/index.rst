@@ -1,8 +1,3 @@
-.. telfer-ecg-heartbeat-categorization-task documentation master file, created by
-   sphinx-quickstart.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Telfer ECG Heartbeat Categorization documentation!
 ==================================================
 
@@ -13,7 +8,10 @@ Contents:
 
    getting-started
    commands
-
+   1.0-data-processing
+   2.0-model-training
+   3.0-holdout-testing
+   4.0-deployment
 
 
 Indices and tables
