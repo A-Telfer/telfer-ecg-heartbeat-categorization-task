@@ -14,8 +14,11 @@ torch
 python-dotenv>=0.5.1
 torchmetrics
 mlflow
-hyperopt
+optuna
 pre-commit
 tqdm
 lightning
 PyWavelets
+statsmodels
+myst-parser
+ghp-import
