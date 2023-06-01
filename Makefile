@@ -34,7 +34,7 @@ build-docker:
 
 ## Build Docker
 run-docker:
-	docker run -it --gpus all --shm-size=16g "telfer-ecg-heartbeat-categorization-task:latest"
+	docker run -it --gpus all --shm-size=16g --mount "type=bind,source=$(PROJECT_DIR)/,target=/workspace/" "telfer-ecg-heartbeat-categorization-task:latest"
 
 ## Delete all compiled Python files
 clean:
@@ -55,7 +55,7 @@ run: requirements
 	mlflow run . -e main
 
 gh-pages: 
-	ghp-import -p docs/_build/html/
+	cd docs && make html && ghp-import -p ../docs/_build/html/
 
 ## Set up python interpreter environment
 create_environment:

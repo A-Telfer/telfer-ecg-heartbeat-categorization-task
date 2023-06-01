@@ -23,7 +23,11 @@ Create and enter the environment
 conda create -n telfer-ecg python=3.11
 activate activate telfer-ecg
 ```
-
+or if using docker 
+```
+make build-docker
+make run-docker
+```
 ## Installing Python Dependencies
 ```
 make requirements

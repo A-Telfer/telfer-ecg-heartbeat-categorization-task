@@ -21,4 +21,5 @@ dependencies:
     - tqdm
     - lightning
     - PyWavelets
+    - optuna
 prefix: /opt/anaconda3/envs/ecg-heartbeat
