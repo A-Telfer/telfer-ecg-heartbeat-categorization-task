@@ -87,13 +87,13 @@
 </html>
 <p>We visualized sample signals from each class, noting several aspects that signals differed such as peak locations, mean amplitude, and signal length.</p>
 <p><img alt="" src="_images/signal_examples_by_class.png" /></p>
-<p><em>Figure 1: Sample Features from each class. For example, Class 3 and Class 4 shows indications of differences in peak location and signal length.</em></p>
+<p><em>Figure 1: Sample Features from each class. For example, Class 3 and Class 4 show indications of differences in peak location and signal length.</em></p>
 <section id="data-augmentation">
 <h3>Data Augmentation<a class="headerlink" href="#data-augmentation" title="Permalink to this heading">¶</a></h3>
 <p>Code: https://github.com/A-Telfer/telfer-ecg-heartbeat-categorization-task/blob/master/src/data/make_dataset.py</p>
 <p>We applied two augmentation techniques to the training dataset:</p>
 <ul>
-<li><p><strong>Signal Grafting</strong>: two signals from the same class were sampled and merged together [CODE]. The goal of this method was to preserve properties of each class while generating new hybrid examples which were typically realistic [EXAMPLE].</p>
+<li><p><strong>Signal Grafting</strong>: two signals from the same class were sampled and merged. The goal of this method was to preserve the properties of each class while generating new hybrid examples which were typically realistic.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">graft_signals</span><span class="p">(</span><span class="n">signal1</span><span class="p">,</span> <span class="n">signal2</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Combines two signals at a random point to generate a new signal&quot;&quot;&quot;</span>
     <span class="n">split_point</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
@@ -101,7 +101,7 @@
 </pre></div>
 </div>
 </li>
-<li><p><strong>Temporal Shift</strong>: signals were shifted $t \in[-5,5]$ along the time axis. The goal of this augmentation was to prevent overfitting of training examples by specific neural-circuits in the model, and also help learn temporal relationships between input neurons (we used a basic linear model, and not a convolutional model that would better preserve these relationships). Any leading or trailing nan values this introduced were filled with the next or last non-nan value respectively.</p>
+<li><p><strong>Temporal Shift</strong>: signals were shifted $t \in[-5,5]$ along the time axis. The goal of this augmentation was to prevent the overfitting of training examples by specific neural circuits in the model, and also help learn temporal relationships between input neurons (we used a basic linear model and not a convolutional model that would better preserve these relationships). Any leading or trailing nan values this introduced were filled with the next or last non-nan value respectively.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">temporal_shift_signal</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">max_shift</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies a random shift along the x-axis&quot;&quot;&quot;</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
@@ -112,8 +112,8 @@
 </div>
 </li>
 </ul>
-<p>Adding small signal is another popular method for data augmentation, however after observing the signals in Figure 1 we decided adding high frequency noise could obscure potential useful features. For example, samples from Class 1 appeared to have more high frequency noise than Class 3, so adding more noise could mask these differences.</p>
-<p>To mitigate the class imbalances during training, we generated a fixed number of new signals per class using the Signal Grafting method described above (followed by a Temporal Shift). To perform hyper-parameter analysis we generated smaller set of 10,000 examples per class (upsampling some classes, downsampling others) which allowed for quicker training.</p>
+<p>Adding small signals is another popular method for data augmentation, however, after observing the signals in Figure 1 we decided adding high-frequency noise could obscure potential useful features. For example, samples from Class 1 appeared to have more high-frequency noise than Class 3, so adding more noise could mask these differences.</p>
+<p>To mitigate the class imbalances during training, we generated a fixed number of new signals per class using the Signal Grafting method described above (followed by a Temporal Shift). To perform hyper-parameter analysis we generated a smaller set of 10,000 examples per class (upsampling some classes, downsampling others) which allowed for quicker training.</p>
 <p><img alt="" src="_images/example_augmentations.png" /></p>
 <p><em>Figure 2: Demonstration of grafting and temporal shift. Not all generated signals will be different from the originals if the split occurs after the signals end (e.g. during the trailing zeros).</em></p>
 </section>
@@ -123,17 +123,17 @@
 <p>Rather than hand-crafted features, we opted for a wavelet transform (Mexican Hat Wavelet using the pywt package) to encode joint temporal and frequency domain features. While wavelet transforms are often used in ECG signals that haven’t been processed to separate heartbeats, we can still observe some wave-like features in the signal examples.</p>
 <p><img alt="" src="_images/wavelet_features.png" /></p>
 <p><em>Figure 3: Example wavelet features extracted from a signal.</em></p>
-<p>Joint time-frequency domain features are advantantageous as they can capture frequency and temporal information (e.g. Figure 3). One downside of using joint time-frequency domain features is that they are not intuitive and therefore not very suitable when explainability is important. Another concern is that the can greatly expand the feature space. Simpler hand-crafted features may be preferable in some contexts for explainability and speed.</p>
-<p>A simpler approach may have been to allow the classification model to learn it’s own features directly from the signal. For a longer project, contrastive learning may have been a promising approach to generate features that emphasize differences between classes.</p>
+<p>Joint time-frequency domain features are advantageous as they can capture frequency and temporal information (e.g. Figure 3). One downside of using joint time-frequency domain features is that they are not intuitive and therefore not very suitable when explainability is important. Another concern is that they can greatly expand the feature space. Simpler hand-crafted features may be preferable in some contexts for explainability and speed.</p>
+<p>A simpler approach may have been to allow the classification model to learn its own features directly from the signal. For a longer project, contrastive learning may have been a promising approach to generate features that emphasize differences between classes.</p>
 </section>
 <section id="missing-data">
 <h3>Missing Data<a class="headerlink" href="#missing-data" title="Permalink to this heading">¶</a></h3>
 <p>The original dataset did not contain any NaN values. The original dataset however appears to have filled missing values with 0 (e.g. trailing zeros after the signal). Because the signal appears normalized between [0,1]. Due to this normalization, imputing using zeros indicates that the missing values are equivalent to the lowest point of the signal.</p>
-<p>Missing data was introduced by our temporal shift augmentation. Because these values occured at the beginning and end of each signal, we opted to fill them using the next or previous value respectively.</p>
+<p>Missing data was introduced by our temporal shift augmentation. Because these values occurred at the beginning and end of each signal, we opted to fill them using the next or previous value respectively.</p>
 <p>Strategies we may have used in other situations:</p>
 <ul class="simple">
-<li><p>If missing data occured in the middle of the signal, we could have linearly interpolated it.</p></li>
-<li><p>If the dataset was very sparse, we may have created a new dummy field to indicate missing values in the original dataset and then filled the missing values with some placeholder. Or we could have included the time of each present values as a separate feature.</p></li>
+<li><p>If missing data occurred in the middle of the signal, we could have linearly interpolated it.</p></li>
+<li><p>If the dataset was very sparse, we may have created a new dummy field to indicate missing values in the original dataset and then filled the missing values with some placeholder. Or we could have included the time of each present value as a separate feature.</p></li>
 </ul>
 <p>The main risk of imputing values is that they can distort the dataset and obscure the real data. For example, with time series data, imputing missing values using global averages will obscure temporal features such as trends.</p>
 </section>

@@ -38,19 +38,19 @@
             
   <section id="task-iv-deployment-strategies">
 <h1>Task IV: Deployment Strategies<a class="headerlink" href="#task-iv-deployment-strategies" title="Permalink to this heading">¶</a></h1>
-<p>Models can be deployed in a number of ways, for example as a REST API web service, as a real-time streaming service, or to edge devices.</p>
-<p>Depending on the context, each of these may be appropriate. For example, if the goal of this is to create a heartbeat Arrythmia diagnosis application, a web server may be the most suitable as it can easily be accessed by external applications (it is also the easiest to deploy). However if this is for monitoring patients and Arrythmia poses an immediate risk, either a real-time streaming service or edge device would be more appropriate. If the model needs to be deployed along with specific hardware for measuring heartbeats, and may need to be mobile or be used in emergency situations where network connectivity is not gaurenteed, then an edge device that can function independently may be the most appropriate.</p>
+<p>Models can be deployed in several ways, for example as a REST API web service, as a real-time streaming service, or to edge devices.</p>
+<p>Depending on the context, each of these may be appropriate. For example, if the goal of this is to create a heartbeat Arrythmia diagnosis application, a web server may be the most suitable as it can easily be accessed by external applications (it is also the easiest to deploy). However if this is for monitoring patients and Arrythmia poses an immediate risk, either a real-time streaming service or edge device would be more appropriate. If the model needs to be deployed along with specific hardware for measuring heartbeats and may need to be mobile or be used in emergencies where network connectivity is not guaranteed, then an edge device that can function independently may be the most appropriate.</p>
 <p>A few important considerations which can help to decide the deployment strategy are:</p>
 <ul class="simple">
 <li><p>Who needs to access the service (is it public, or for internal use)</p></li>
-<li><p>How quickly do results need to be returned (e.g. real time, of is a delay fine)</p></li>
+<li><p>How quickly do results need to be returned (e.g. real-time, or is a delay fine)</p></li>
 <li><p>How much bandwidth/compute is needed? (if it needs a lot, it may limit what devices it can be deployed on)</p></li>
 </ul>
-<p>Separate from these considerations, we also need to ensure the model is working as expected. In some domains, data can drift causing the model to become less accurate over time. Also, if we are constantly improving the model and releasing new versions there is always the chance of a bad release where a model performs much worse in the real world compared to the test environment. There are a few strategies to help mitigate these issues that should incorporated into automatic pipelines:</p>
+<p>Separate from these considerations, we also need to ensure the model is working as expected. In some domains, data can drift causing the model to become less accurate over time. Also, if we are constantly improving the model and releasing new versions there is always the chance of a bad release where a model performs much worse in the real world compared to the test environment. There are a few strategies to help mitigate these issues that should be incorporated into automatic pipelines:</p>
 <ul class="simple">
 <li><p>monitor incoming data and outgoing predictions with statistical analysis to ensure they belong to the same distributions as historical data. Any differences should be reported. This may also help prevent a wide range of issues such as faulty connections, or identify situations where the model may not be adequately trained</p></li>
 <li><p>when releasing models, have multiple-validation checks. For example, before moving a model to production, a final holdout set should be set aside to pass/fail the model during staging.</p></li>
-<li><p>infravalidation can also be used before pushing models to production in order to verify that they work as expected in the test environment.</p></li>
+<li><p>infravalidation can also be used before pushing models to production to verify that they work as expected in the test environment.</p></li>
 </ul>
 <p>A possible scalable deployment environment might look like this:</p>
 <ol class="arabic simple">

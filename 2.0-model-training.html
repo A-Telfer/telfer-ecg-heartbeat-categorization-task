@@ -45,9 +45,9 @@
 <section id="model">
 <h2>Model<a class="headerlink" href="#model" title="Permalink to this heading">¶</a></h2>
 <p>Code: https://github.com/A-Telfer/telfer-ecg-heartbeat-categorization-task/blob/master/src/models/train_model.py</p>
-<p>We implemented a simple Model using stacked linear layers (size=2048) in Pytorch and Lightning. Despite it’s simplicity, from previous experience I know Linear models have worked well with real-world EEG datasets which similar properties. Linear models are also often faster than convolution models (can depend on parameters such as stride), though they are much larger.</p>
-<p>An alternative approach may have been to use a 1D Convolutional model. One of the main strengths of convolutional models is their ability to extract spatial and frequency information, however we have already moved towards this by using wavelet features. Convolutional models are often slower and can be harder to restructure when changing the feature space.</p>
-<p>Another approach may have been to use an LSTM or other recurrent model, however these are considerably slower to train/infer with and can struggle with longer signals (similarly attention/transformer networks can struggle with longer signals).</p>
+<p>We implemented a simple Model using stacked linear layers (size=2048) in Pytorch and Lightning. Despite its simplicity, from previous experience, I know Linear models have worked well with real-world EEG datasets which similar properties. Linear models are also often faster than convolution models (can depend on parameters such as stride), though they are much larger.</p>
+<p>An alternative approach may have been to use a 1D Convolutional model. One of the main strengths of convolutional models is their ability to extract spatial and frequency information, however, we have already moved towards this by using wavelet features. Convolutional models are often slower and can be harder to restructure when changing the feature space.</p>
+<p>Another approach may have been to use an LSTM or other recurrent model, however, these are considerably slower to train/infer with and can struggle with longer signals (similarly attention/transformer networks can struggle with longer signals).</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LinearModel</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">LightningModule</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -114,9 +114,9 @@
 </li>
 </ul>
 <p>Optimization was performed using Tree of Parzen Estimators (TPE) implemented in the <code class="docutils literal notranslate"><span class="pre">optuna</span></code> package. For demonstrative purposes, we only performed 20 runs. Each run consisted of up to 100 training epochs (shorter depending on the early-stopping callback).</p>
-<p>The training dataset was balanced during the augmentation stage, so we optimized using a standard unweighted crossentropy loss. The validation, test, and holdout datasets were not balanced however. Therefore to evaluate models we used the AUROC (with a macro average such that class was given equal weighting).</p>
+<p>The training dataset was balanced during the augmentation stage, so we optimized using a standard unweighted cross-entropy loss. The validation, test, and holdout datasets were not balanced, however. Therefore to evaluate models we used the AUROC (with a macro average such that class was given equal weighting).</p>
 <p>The optimal parameters that were found after 20 runs were: <code class="docutils literal notranslate"><span class="pre">learning_rate=0.0053</span></code>, <code class="docutils literal notranslate"><span class="pre">num_layers=4</span></code>, <code class="docutils literal notranslate"><span class="pre">momentum=0.969</span></code>, <code class="docutils literal notranslate"><span class="pre">weight_decay=0.0001</span></code></p>
-<p>Given that we were optimizing several values at once, 20 runs is unlikely to be enough. An improvement could have been to optimize one parameter at a time, which pytorch has previously used for achieving state-of-the-art performance on imagenet: https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/)</p>
+<p>Given that we were optimizing several values at once, 20 runs are unlikely to be enough. An improvement could have been to optimize one parameter at a time, which Pytorch has previously used for achieving state-of-the-art performance on imagenet: https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/)</p>
 </section>
 <section id="overfitting-and-underfitting">
 <h2>Overfitting and Underfitting<a class="headerlink" href="#overfitting-and-underfitting" title="Permalink to this heading">¶</a></h2>
@@ -125,7 +125,7 @@
 </section>
 <section id="early-stopping-callback">
 <h2>Early Stopping Callback<a class="headerlink" href="#early-stopping-callback" title="Permalink to this heading">¶</a></h2>
-<p>We implemented early stopping callback that stops the training and loads the best model. The rationale behind early stopping is simple, once the model stops improving on the validation set then the model is likely beginning to overfit to the training dataset. We add <code class="docutils literal notranslate"><span class="pre">patience</span></code> to allow for the model to exit suboptimal minimas that cause the validation metric to worsen temporarily.</p>
+<p>We implemented an early stopping callback that stops the training and loads the best model. The rationale behind early stopping is simple, once the model stops improving on the validation set then the model is likely beginning to overfit to the training dataset. We add <code class="docutils literal notranslate"><span class="pre">patience</span></code> to give the model a chance to exit suboptimal minimas that cause the validation metric to worsen temporarily.</p>
 <p><img alt="" src="_images/early_stopping_by_auc.png" /></p>
 <p><em>Figure 4: Evaluation runs show early stopping after validation AUC plateaus.</em></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">lass</span> <span class="n">MetricsCallback</span><span class="p">(</span><span class="n">Callback</span><span class="p">):</span>
@@ -184,16 +184,16 @@
 <section id="evaluation">
 <h2>Evaluation<a class="headerlink" href="#evaluation" title="Permalink to this heading">¶</a></h2>
 <p>Code: https://github.com/A-Telfer/telfer-ecg-heartbeat-categorization-task/blob/master/notebooks/4.0-telfer-explore-results.ipynb</p>
-<p>We used the validation dataset for early stopping, and the testing dataset was used to select a model for hyper-parameter optimization, so evaluation was run on a separate holdout set. (Performance was higher on the testing dataset as expected and is compared in the next section)</p>
-<p>On the holdout set, the model had an AUROC of 0.9833. It’s average accuracy across classes was 0.8961, however the micro accuracy on all test cases (not accounting for class imbalance) was 0.9445 due to its high performance on the over-represented classes.</p>
+<p>We used the validation dataset for early stopping, and the testing dataset was used to select a model for hyper-parameter optimization, so the evaluation was run on a separate holdout set. (Performance was higher on the testing dataset as expected and is compared in the next section)</p>
+<p>On the holdout set, the model had an AUROC of 0.9833. Its average accuracy across classes was 0.8961, however, the micro accuracy on all test cases (not accounting for class imbalance) was 0.9445 due to its high performance on the over-represented classes.</p>
 <p><img alt="" src="_images/confusion_matrix_holdout.png" /></p>
 <p><em>Figure 5: Confusion Matrix results on the holdout dataset normalized over the True label. We see that the model struggles the most to classify Class 1, often confusing it for Class 0.</em></p>
 <p>There are many ways we may improve the model, here are a few examples</p>
 <ul class="simple">
-<li><p>The model may be overly simplistic. Even a basic convolutional neural networks may provide better performance as they are well suited to tasks when data is spatially or temporally related.</p></li>
-<li><p>The learning rate can be decreased overtime, either using a learning rate callback or a learning rate scheduler.</p></li>
+<li><p>The model may be overly simplistic. Even basic convolutional neural networks may provide better performance as they are well suited to tasks when data is spatially or temporally related.</p></li>
+<li><p>The learning rate can be decreased over time, either using a learning rate callback or a learning rate scheduler.</p></li>
 <li><p>The number of runs for hyper-parameter optimization was very small compared to the number of parameters being optimized. Increasing the runs, or optimizing fields individually is likely to improve results.</p></li>
-<li><p>The hyper-parameter optimization can be expanded to compare different features, augmentation approaches, and model types.</p></li>
+<li><p>Hyper-parameter optimization can be expanded to compare different features, augmentation approaches, and model types.</p></li>
 <li><p>I think contrastive learning (perhaps with Triplet-loss) may provide interesting features and improve performance</p></li>
 </ul>
 </section>

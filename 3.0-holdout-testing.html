@@ -44,10 +44,10 @@
 <h1>Task III: Testing the Holdout Set<a class="headerlink" href="#task-iii-testing-the-holdout-set" title="Permalink to this heading">¶</a></h1>
 <p>Code: https://github.com/A-Telfer/telfer-ecg-heartbeat-categorization-task/blob/master/notebooks/4.0-telfer-explore-results.ipynb</p>
 <p>The results on the holdout dataset (Figure 7) were poorer than the test dataset (Figure 6). The AUC also declined from the training (0.999) -&gt; validation (0.991) -&gt; -&gt; test (0.986) -&gt; holdout (0.983).</p>
-<p>These results make sense because each time we train or select a model based on a dataset we are effectively fitting to it. Therefore the performance of models on these datasets is expected to be slightly higher than on new datasets (such as the holdout on which no decision have been made).</p>
+<p>These results make sense because each time we train or select a model based on a dataset we are effectively fitting to it. Therefore the performance of models on these datasets is expected to be slightly higher than on new datasets (such as the holdout on which no decisions have been made).</p>
 <ul class="simple">
 <li><p>Training Dataset: The model is fit to the dataset directly due to training on it</p></li>
-<li><p>Validation Dataset: Less directly the model is fit to this dataset because it is used for early stopping and model selection. The model is frozen at the point where it performed best on the validation set.</p></li>
+<li><p>Validation Dataset: The model is fit to this dataset because it is used for early stopping and model selection. The model is frozen at the point where it performed best on the validation set.</p></li>
 <li><p>Testing Dataset: This dataset is used to select hyperparameters, thus hyperparameters that lead to poor performance on the test set are discarded.</p></li>
 <li><p>Holdout: The holdout is purely used for evaluation. No decisions are currently being made on it, leaving it as the best indicator of model performance in the real world.</p></li>
 </ul>
