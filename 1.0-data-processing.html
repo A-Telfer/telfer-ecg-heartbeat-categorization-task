@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Task I: Data Processing &#8212; telfer-ecg-heartbeat-categorization-task 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Task II: Model Training and Fine Tuning" href="2.0-model-training.html" />
+    <link rel="prev" title="Commands" href="commands.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="2.0-model-training.html" title="Task II: Model Training and Fine Tuning"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="commands.html" title="Commands"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">telfer-ecg-heartbeat-categorization-task 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Task I: Data Processing</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="task-i-data-processing">
+<h1>Task I: Data Processing<a class="headerlink" href="#task-i-data-processing" title="Permalink to this heading">¶</a></h1>
+<section id="exploratory-data-analysis">
+<h2>Exploratory Data Analysis<a class="headerlink" href="#exploratory-data-analysis" title="Permalink to this heading">¶</a></h2>
+<p>Code: https://github.com/A-Telfer/telfer-ecg-heartbeat-categorization-task/blob/master/notebooks/1.0-telfer-exploratory-data-analysis.ipynb</p>
+<p>In the exploratory data analysis notebook we identified the composition of the dataset in terms of data size, types, and range. We found that the target classes were very imbalanced (Table 1). By describing the data we found that the signals were normalized between [0, 1] and were followed by trailing zeros to pad shorter signals.</p>
+<html>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Class Label</th>
+      <th>Samples</th>
+      <th>Ratio</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>72471</td>
+      <td>0.828</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2223</td>
+      <td>0.025</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>5788</td>
+      <td>0.066</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>641</td>
+      <td>0.007</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>6431</td>
+      <td>0.073</td>
+    </tr>
+  </tbody>
+</table>
+<p><em>Table 1: Sample class distribution in the training dataset.</em></p>
+</html>
+<p>We visualized sample signals from each class, noting several aspects that signals differed such as peak locations, mean amplitude, and signal length.</p>
+<p><img alt="" src="_images/signal_examples_by_class.png" /></p>
+<p><em>Figure 1: Sample Features from each class. For example, Class 3 and Class 4 shows indications of differences in peak location and signal length.</em></p>
+<section id="data-augmentation">
+<h3>Data Augmentation<a class="headerlink" href="#data-augmentation" title="Permalink to this heading">¶</a></h3>
+<p>Code: https://github.com/A-Telfer/telfer-ecg-heartbeat-categorization-task/blob/master/src/data/make_dataset.py</p>
+<p>We applied two augmentation techniques to the training dataset:</p>
+<ul>
+<li><p><strong>Signal Grafting</strong>: two signals from the same class were sampled and merged together [CODE]. The goal of this method was to preserve properties of each class while generating new hybrid examples which were typically realistic [EXAMPLE].</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">graft_signals</span><span class="p">(</span><span class="n">signal1</span><span class="p">,</span> <span class="n">signal2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Combines two signals at a random point to generate a new signal&quot;&quot;&quot;</span>
+    <span class="n">split_point</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">signal1</span><span class="p">[:</span><span class="n">split_point</span><span class="p">],</span> <span class="n">signal2</span><span class="p">[</span><span class="n">split_point</span><span class="p">:]])</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Temporal Shift</strong>: signals were shifted $t \in[-5,5]$ along the time axis. The goal of this augmentation was to prevent overfitting of training examples by specific neural-circuits in the model, and also help learn temporal relationships between input neurons (we used a basic linear model, and not a convolutional model that would better preserve these relationships). Any leading or trailing nan values this introduced were filled with the next or last non-nan value respectively.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">temporal_shift_signal</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">max_shift</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies a random shift along the x-axis&quot;&quot;&quot;</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">max_shift</span><span class="p">,</span> <span class="n">max_shift</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">ffill</span><span class="p">()</span><span class="o">.</span><span class="n">bfill</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">values</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p>Adding small signal is another popular method for data augmentation, however after observing the signals in Figure 1 we decided adding high frequency noise could obscure potential useful features. For example, samples from Class 1 appeared to have more high frequency noise than Class 3, so adding more noise could mask these differences.</p>
+<p>To mitigate the class imbalances during training, we generated a fixed number of new signals per class using the Signal Grafting method described above (followed by a Temporal Shift). To perform hyper-parameter analysis we generated smaller set of 10,000 examples per class (upsampling some classes, downsampling others) which allowed for quicker training.</p>
+<p><img alt="" src="_images/example_augmentations.png" /></p>
+<p><em>Figure 2: Demonstration of grafting and temporal shift. Not all generated signals will be different from the originals if the split occurs after the signals end (e.g. during the trailing zeros).</em></p>
+</section>
+<section id="feature-engineering">
+<h3>Feature Engineering<a class="headerlink" href="#feature-engineering" title="Permalink to this heading">¶</a></h3>
+<p>Code: https://github.com/A-Telfer/telfer-ecg-heartbeat-categorization-task/blob/master/src/features/build_features.py</p>
+<p>Rather than hand-crafted features, we opted for a wavelet transform (Mexican Hat Wavelet using the pywt package) to encode joint temporal and frequency domain features. While wavelet transforms are often used in ECG signals that haven’t been processed to separate heartbeats, we can still observe some wave-like features in the signal examples.</p>
+<p><img alt="" src="_images/wavelet_features.png" /></p>
+<p><em>Figure 3: Example wavelet features extracted from a signal.</em></p>
+<p>Joint time-frequency domain features are advantantageous as they can capture frequency and temporal information (e.g. Figure 3). One downside of using joint time-frequency domain features is that they are not intuitive and therefore not very suitable when explainability is important. Another concern is that the can greatly expand the feature space. Simpler hand-crafted features may be preferable in some contexts for explainability and speed.</p>
+<p>A simpler approach may have been to allow the classification model to learn it’s own features directly from the signal. For a longer project, contrastive learning may have been a promising approach to generate features that emphasize differences between classes.</p>
+</section>
+<section id="missing-data">
+<h3>Missing Data<a class="headerlink" href="#missing-data" title="Permalink to this heading">¶</a></h3>
+<p>The original dataset did not contain any NaN values. The original dataset however appears to have filled missing values with 0 (e.g. trailing zeros after the signal). Because the signal appears normalized between [0,1]. Due to this normalization, imputing using zeros indicates that the missing values are equivalent to the lowest point of the signal.</p>
+<p>Missing data was introduced by our temporal shift augmentation. Because these values occured at the beginning and end of each signal, we opted to fill them using the next or previous value respectively.</p>
+<p>Strategies we may have used in other situations:</p>
+<ul class="simple">
+<li><p>If missing data occured in the middle of the signal, we could have linearly interpolated it.</p></li>
+<li><p>If the dataset was very sparse, we may have created a new dummy field to indicate missing values in the original dataset and then filled the missing values with some placeholder. Or we could have included the time of each present values as a separate feature.</p></li>
+</ul>
+<p>The main risk of imputing values is that they can distort the dataset and obscure the real data. For example, with time series data, imputing missing values using global averages will obscure temporal features such as trends.</p>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Task I: Data Processing</a><ul>
+<li><a class="reference internal" href="#exploratory-data-analysis">Exploratory Data Analysis</a><ul>
+<li><a class="reference internal" href="#data-augmentation">Data Augmentation</a></li>
+<li><a class="reference internal" href="#feature-engineering">Feature Engineering</a></li>
+<li><a class="reference internal" href="#missing-data">Missing Data</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="commands.html"
+                          title="previous chapter">Commands</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="2.0-model-training.html"
+                          title="next chapter">Task II: Model Training and Fine Tuning</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/1.0-data-processing.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="2.0-model-training.html" title="Task II: Model Training and Fine Tuning"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="commands.html" title="Commands"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">telfer-ecg-heartbeat-categorization-task 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Task I: Data Processing</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright .
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    </div>
+  </body>
+</html>

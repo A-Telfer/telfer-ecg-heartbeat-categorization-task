@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Task IV: Deployment Strategies &#8212; telfer-ecg-heartbeat-categorization-task 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Task III: Testing the Holdout Set" href="3.0-holdout-testing.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="3.0-holdout-testing.html" title="Task III: Testing the Holdout Set"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">telfer-ecg-heartbeat-categorization-task 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Task IV: Deployment Strategies</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="task-iv-deployment-strategies">
+<h1>Task IV: Deployment Strategies<a class="headerlink" href="#task-iv-deployment-strategies" title="Permalink to this heading">¶</a></h1>
+<p>Models can be deployed in a number of ways, for example as a REST API web service, as a real-time streaming service, or to edge devices.</p>
+<p>Depending on the context, each of these may be appropriate. For example, if the goal of this is to create a heartbeat Arrythmia diagnosis application, a web server may be the most suitable as it can easily be accessed by external applications (it is also the easiest to deploy). However if this is for monitoring patients and Arrythmia poses an immediate risk, either a real-time streaming service or edge device would be more appropriate. If the model needs to be deployed along with specific hardware for measuring heartbeats, and may need to be mobile or be used in emergency situations where network connectivity is not gaurenteed, then an edge device that can function independently may be the most appropriate.</p>
+<p>A few important considerations which can help to decide the deployment strategy are:</p>
+<ul class="simple">
+<li><p>Who needs to access the service (is it public, or for internal use)</p></li>
+<li><p>How quickly do results need to be returned (e.g. real time, of is a delay fine)</p></li>
+<li><p>How much bandwidth/compute is needed? (if it needs a lot, it may limit what devices it can be deployed on)</p></li>
+</ul>
+<p>Separate from these considerations, we also need to ensure the model is working as expected. In some domains, data can drift causing the model to become less accurate over time. Also, if we are constantly improving the model and releasing new versions there is always the chance of a bad release where a model performs much worse in the real world compared to the test environment. There are a few strategies to help mitigate these issues that should incorporated into automatic pipelines:</p>
+<ul class="simple">
+<li><p>monitor incoming data and outgoing predictions with statistical analysis to ensure they belong to the same distributions as historical data. Any differences should be reported. This may also help prevent a wide range of issues such as faulty connections, or identify situations where the model may not be adequately trained</p></li>
+<li><p>when releasing models, have multiple-validation checks. For example, before moving a model to production, a final holdout set should be set aside to pass/fail the model during staging.</p></li>
+<li><p>infravalidation can also be used before pushing models to production in order to verify that they work as expected in the test environment.</p></li>
+</ul>
+<p>A possible scalable deployment environment might look like this:</p>
+<ol class="arabic simple">
+<li><p>heart beats ECG signals are collected and streamed using Apache Kafka to an Apache Spark cluster</p></li>
+<li><p>a load manager directs the stream to an available server, where the data is processed</p></li>
+<li><p>the data stream is then split to perform feature extraction and run validation statistics</p></li>
+<li><p>the feature-extracted stream is then used to run inference on</p></li>
+<li><p>the inference results and statistics are then joined and streamed back over Kafka to subscribed users (e.g. nursing stations, other web services) and to a data sink (e.g. a SQL database).</p></li>
+</ol>
+<p>When deploying a new model, the pipelines may look like</p>
+<ol class="arabic simple">
+<li><p>Perform hyperparameter optimization with the model (to prevent overfitting use a validation set for callbacks such as early stopping)</p></li>
+<li><p>Select the hyperparameters based on a models performance on a test dataset</p></li>
+<li><p>Evaluate the model on a holdout set to see if it outperforms the current production model by a sufficient amount</p></li>
+<li><p>Move the model to staging and run infravalidation on the model in a production environment (evaluate with another holdout dataset) to see how the model functions in the real world</p></li>
+<li><p>Deploy the model to production</p></li>
+</ol>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="3.0-holdout-testing.html"
+                          title="previous chapter">Task III: Testing the Holdout Set</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/4.0-deployment.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="3.0-holdout-testing.html" title="Task III: Testing the Holdout Set"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">telfer-ecg-heartbeat-categorization-task 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Task IV: Deployment Strategies</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright .
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    </div>
+  </body>
+</html>
