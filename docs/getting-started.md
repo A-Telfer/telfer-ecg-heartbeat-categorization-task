@@ -14,8 +14,13 @@ Minimally requires `mitbih_train.csv` and `mitbih_test.csv` to be there
             └── mitbih_test.csv
 ```
 
-2. A conda must be installed on the system. 
-- Alternatively, you can use the .devcontainer or dockerfile to create a docker environment with conda installed.
+2. conda must be installed on the system. 
+- Alternatively, you can use the .devcontainer or dockerfile to create a gpu-enabled docker environment with conda installed.
+
+## Clone the repository 
+```
+git clone git@github.com:A-Telfer/telfer-ecg-heartbeat-categorization-task.git
+```
 
 ## Creating the environment 
 Create and enter the environment 
