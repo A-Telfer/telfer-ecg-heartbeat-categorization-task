@@ -14,4 +14,5 @@ COPY . /tmp
 RUN cd /tmp && pip install -r requirements.txt
 
 # Setup the ipykernel to run notebooks
+RUN pip install ipykernel
 RUN conda run -n base python -m ipykernel install --user
